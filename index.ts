@@ -1,36 +1,44 @@
 import { GeminiAPI } from "./API";
 import { ChatHistory } from "./ChatHistory";
-import { Tsundere } from "./Dere";
-import { prompt } from "./prompt";
+import { Discord } from "./Discord";
+import { eventEmitter } from "./eventEmitter";
+import { userMessage } from "./Discord";
+import { CharacterFactory } from "./characters/CharacterFactory";
 
 const gemini = new GeminiAPI("models/gemini-pro");
-
-const tsundere = new Tsundere("Liber");
-
+const character = CharacterFactory.createCharacter("firekeeper");
 const history = new ChatHistory();
-
-const userName = "Davi"
+const discord = new Discord();
 
 async function run() {
 
-    while (true) {
-        const message = await prompt(`${userName}: `);
-        history.addMessage(userName, message);
-        
+    discord.init()
+
+    eventEmitter.on('USER_MESSAGE_SENT', async (message: userMessage) => {
+        history.addMessage(message.author, message.content);
+
         let doneRequest = false
         while(!doneRequest) {
             try {
-                const response = await gemini.getResponse(tsundere.getPrompt() + history.showHistory());
-                history.addMessage("Liber", response);
-                console.log(`Liber: ${response}`);
-                doneRequest = true; 
-            } catch (error) {}
+                const response = await gemini.getResponse(character.getPrompt() + history.showHistory());
+                history.addMessage(character.getName(), filterMessage(response));
+                await discord.sendMessage(filterMessage(response));
+                doneRequest = true;
+            } catch (error) {
+                console.log(error)
+            }
         }
-        
+    })
 
+    // Gambiarra
+    function filterMessage(response: string) {
+        if (!response.includes(":")) return response
+        const doubleDotIndex = response.indexOf(":");
+        return response.slice(doubleDotIndex + 1);
     }
-    
 
+
+  
 
 }
 

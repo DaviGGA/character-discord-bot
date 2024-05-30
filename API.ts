@@ -1,15 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import 'dotenv/config'
-import { Dere } from "./Dere";
-import { ChatHistory } from "./ChatHistory";
 
 
 interface API {
-    getResponse(prompt: string): string
+    getResponse(prompt: string): Promise<string>
 }
 
 
-export class GeminiAPI {
+export class GeminiAPI implements API {
 
     private gemini: GoogleGenerativeAI;
     private model: any;
@@ -20,7 +18,7 @@ export class GeminiAPI {
         this.model = this.gemini.getGenerativeModel({model}); 
     }
 
-    async getResponse(prompt: string) {
+    async getResponse(prompt: string): Promise<string> {
         const result = await this.model.generateContent(prompt);
         const response = await result.response;
         return response.text();
